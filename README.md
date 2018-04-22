@@ -36,7 +36,7 @@ To set up the python environment (assuming Python 3.6.4 is installed), from requ
 1. [MAC or LINUX] bin/activate
 
 To run the program (once the virtual env is activated)
-1. cd <PROJECT DIRECTORY>
+1. cd [PROJECT DIRECTORY]
 1. pip -r requirements.txt
 1. python run.py
 
