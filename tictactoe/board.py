@@ -31,7 +31,6 @@ class BoardCalculator():
         self.board.replace('O', 0, inplace=True)
         self.board.replace('', np.nan, inplace=True)
 
-
     def validInput(self, listarray):
         '''
         Checks entries are valid input 'X','O' or ''
@@ -41,7 +40,7 @@ class BoardCalculator():
         rtn = True
         for t in listarray:
             for v in t:
-                if v not in ['X','O', '']:
+                if v not in ['X', 'O', '']:
                     rtn = False
                     break
         return rtn
@@ -59,7 +58,7 @@ class BoardCalculator():
             if self.board.isnull().values.all() or int(sum(self.board.sum(numeric_only=True))) < 3:
                 rtn = 4
             # 'X' goes first so has 3 min and 5 max for valid game
-            elif not int(sum(self.board.sum(numeric_only=True))) in range(3,6):
+            elif not int(sum(self.board.sum(numeric_only=True))) in range(3, 6):
                 rtn = 5
         return rtn
 
@@ -74,18 +73,23 @@ class BoardCalculator():
             if valid > 0:
                 rtn = self.responses()[valid]
             else:
-                # sum rows and columns
-                df_rows = self.board.sum(axis=1, skipna=True)
-                df_cols = self.board.sum(axis=0, skipna=True)
-                for df in [df_rows,df_cols]:
-                    for i in [0, 3]:
-                        if len(df[df == i]) > 0:
-                            rtn = self.responses()[i]
+                # count rows and columns
+                df_rows_x = self.board[self.board == 1].count(axis=0, numeric_only=True)
+                df_rows_o = self.board[self.board == 0].count(axis=0, numeric_only=True)
+                df_cols_x = self.board[self.board == 1].count(axis=1, numeric_only=True)
+                df_cols_o = self.board[self.board == 0].count(axis=1, numeric_only=True)
+
+                for df in [df_rows_x, df_cols_x]:
+                    if len(df[df == 3]) > 0:
+                        rtn = self.responses()[3]
+                for df in [df_rows_o, df_cols_o]:
+                    if len(df[df == 3]) > 0:
+                        rtn = self.responses()[0]
                 # sum diagonals
                 if rtn is None:
                     df_diag = pd.DataFrame([(self.board.loc[0, 0], self.board.loc[1, 1], self.board.loc[2, 2]),
-                                          (self.board.loc[0, 2], self.board.loc[1, 1], self.board.loc[2, 0]) ])
-                    for diag in df_diag.sum(axis=1,skipna=False,numeric_only=False):
+                                            (self.board.loc[0, 2], self.board.loc[1, 1], self.board.loc[2, 0])])
+                    for diag in df_diag.sum(axis=1, skipna=False, numeric_only=False):
                         if np.isnan(diag):
                             continue
                         elif int(diag) == 3 or int(diag) == 0:
@@ -94,22 +98,27 @@ class BoardCalculator():
                 if rtn is None and int(sum(self.board.sum(numeric_only=False))) == 5:
                     rtn = self.responses()[1]
 
+                # otherwise incomplete
+                if rtn is None:
+                    rtn = self.responses()[4]
+
 
         else:
             print('ERROR: Board entries not loaded')
         return rtn
 
+
 ######################################################################################################################
 if __name__ == '__main__':
 
-    entries = {'xwinr':[('X','X','X'),('O','',''),('O','','')],
-               'owinr':[('X','X',''),('O','O','O'),('','X','')],
-               'xwinc':[('X','X','O'),('O','X','X'),('O','X','O')],
+    entries = {'xwinr': [('X', 'X', 'X'), ('O', '', ''), ('O', '', '')],
+               'owinr': [('X', 'X', ''), ('O', 'O', 'O'), ('', 'X', '')],
+               'xwinc': [('X', 'X', 'O'), ('O', 'X', 'X'), ('O', 'X', 'O')],
                'owinc': [('X', 'X', 'O'), ('', 'X', 'O'), ('', '', 'O')],
                'xwind': [('X', '', 'O'), ('O', 'X', 'X'), ('O', '', 'X')],
                'owind': [('X', 'X', 'O'), ('', 'O', 'X'), ('O', 'X', 'O')],
                'draw': [('X', 'X', 'O'), ('O', 'O', 'X'), ('X', 'X', 'O')],
-               'incomplete': [('X', 'X', 'O'), ('', '', ''), ('', '', '')],
+               'incomplete': [('X', '', 'O'), ('', '', 'O'), ('X', 'X', '')],
                'incomplete0': [('', '', ''), ('', '', ''), ('', '', '')],
                'incomplete1': [('X', '', ''), ('', '', ''), ('', '', '')],
                'invalidgame': [('X', 'X', 'X'), ('O', 'X', 'X'), ('O', 'X', 'O')],
@@ -123,6 +132,6 @@ if __name__ == '__main__':
         try:
             board.loadBoardValues(entries[test])
             status = board.checkBoard()
-            print("\n*** ",status," ***\n")
+            print("\n*** ", status, " ***\n")
         except Exception as e:
             print('Error:', e.args[0])
